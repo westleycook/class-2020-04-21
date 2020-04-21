@@ -26,8 +26,23 @@ cces <- read_rds("cces_initial.rds")
 **Prompt:** Take a peek at the data and try and figure out what the variables mean. You can find the codebook here: https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/II2DB6/EARRB5&version=4.1 
 
 1) What is the age of oldest person who responded to this survey?
+- 95
 
 2) What proportion of females voted for Trump? 
+- .399 (~40%)
+
+```{r scene-1}
+
+summary(cces)
+
+cces %>% 
+  filter(gender == "Female") %>% 
+  summarize(mean(trump == 1))
+
+glimpse(cces)
+
+```
+
 
 
 # Scene 2
@@ -38,6 +53,36 @@ cces <- read_rds("cces_initial.rds")
 
 2) What is the expected vote for Dom - who is Male, 37, holds a 4-year degree (placing him in the 5 `educ` bucket), Asian, makes $77,000, with `ideology` and `party` equal to 3. (Hint: use predict().)
 
+```{r scene-2}
+
+logistic_mod <- logistic_reg() %>% 
+  set_engine("glm")
+
+logistic_fit <- fit(logistic_mod,
+                    trump ~ gender + age + educ + race + income + party + ideology,
+                    data = cces)
+
+logistic_fit %>% 
+  tidy(conf.int = TRUE)
+
+# gender: estimate = -0.339742944
+# gender / 4: -0.0849
+# so a person who answered female was at most 8.5% less likely to vote trump than a person who answered male, taking into account all other variables in the model. 
+
+predict(logistic_fit, new_data = tibble(gender = "Male",
+                                        age = 37,
+                                        educ = 5,
+                                        race = "Asian",
+                                        income = 8,
+                                        ideology = 3,
+                                        party = 3))
+
+# predicted value is 0; we predict a Clinton vote
+
+
+```
+
+
 
 
 # Scene 3
@@ -47,6 +92,35 @@ cces <- read_rds("cces_initial.rds")
 1) Interpret the output of the CART model (Hint: set extra = "auto" in `prp()`.) Where would Dom fall in this decision tree? 
 
 2) Looking at the randomForest model, what does the OOB error tell us? Interpret the first row, second column of the confusion matrix, what does that 920 represent? How does 920 relate to the class.error of 0.078?
+
+```{r scene-3}
+
+set.seed(1005)
+
+cart_mod <- decision_tree() %>% 
+  set_engine("rpart", model = TRUE) %>% 
+  set_mode("classification")
+
+cart_fit <- fit(cart_mod,
+                trump ~ gender + age + educ + race + income + party + ideology,
+                    data = cces)
+
+cart_fit$fit %>% 
+  prp(extra = "auto", varlen = 0, faclen = 0)
+
+forest_mod <- rand_forest(mtry = 7, trees = 50) %>% 
+  set_engine("randomForest") %>% 
+  set_mode("classification")
+
+forest_fit <- fit(forest_mod,
+                  trump ~ gender + age + educ + race + income + party + ideology,
+                    data = cces)
+
+forest_fit
+
+# OOB error of ~9% tells us that accuracy is ~91%
+
+```
 
 
 
