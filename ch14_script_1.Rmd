@@ -1,0 +1,66 @@
+---
+title: 'Chapter 14: Machine Learning'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# Thanks to Yao Yu for some excellent help with this script.
+
+knitr::opts_chunk$set(echo = TRUE)
+library(infer)
+library(tidyverse)
+library(tidymodels)
+library(rpart.plot)
+
+cces <- read_rds("cces_initial.rds")
+```
+
+
+**Intro:** [Machine Learning](https://davidkane9.github.io/PPBDS/14-machine-learning.html). In today's class, we'll be applying your knowledge of regression models to the magical concept of machine learning. After this lesson, you'll have an introductory understanding of training, testing, validation, and classification.
+
+**Data:** The dataset you'll be working with today is the 2006-2018 Cooperative Congressional Election Study data. This is the same dataset as used in the textbook, but we'll be using slightly different variables. This dataset has already been cleaned to remove non-responses and labeled so it's easier to read (eg: for gender 1 is now Male and 2 is Female). income has been changed from a factor to numeric where 1 = "Less than 10k" and 12 = "150k+". The variable we'll be trying to predict is how people voted in 2016. This variables asked people "“2017: In the election for U.S. President, who did you vote for? [If reported voting] 2016: For whom did you vote for President of the United States? [Post-election]". From the responses, which we filtered down to just people who voted for Donald Trump or Hilary Clinton, we'll be trying to predict who voted for trump. In the variable trump = 1 is voted for Trump and 0 = voted for Clinton.
+
+# Day 1
+
+# Scene 1
+
+**Prompt:** Take a peek at the data and try and figure out what the variables mean. You can find the codebook here: https://dataverse.harvard.edu/file.xhtml?persistentId=doi:10.7910/DVN/II2DB6/EARRB5&version=4.1 
+
+1) Who is the oldest person who responded to this survey?
+
+2) What proportion of females voted for Trump? 
+
+2) Are there more Republicans or Democrats who responded?
+
+
+
+
+# Scene 2
+
+**Prompt:** Start by creating a logistic model using every variable to try and predict the Trump vote. Consider using `logistic_reg()`, `set_engine()`, and `fit()`. Save the model to logistic_mod and the fit to logistic_fit. 
+
+1) Print out the model with the confidence interval and interpret the coefficient of party (Hint: use the divide-by-four rule). Are females more or less likely to vote for Trump? Why might people who have a higher income be predicted to be less likely to vote for Trump?
+
+2) What is the expected vote from Dom - who is Male, 37, holds a 4-year degree, asian, makes 77k, moderate who leans Democrat? (Hint: use predict())
+
+
+
+# Scene 3
+
+**Prompt:** Great! Now that you have created a logistic model to predict Trump vote, create two more models: CART (rpart) and randomforest. Set the seed to 1005. For rand_forest, set mtry = 7 to use all our predictors and set trees = 50 so your computer doesn't take forever to run.
+
+1) Interpret the output of the CART model (Hint: set extra = "auto" in prp). Where would Dom fall in this decision tree and what is the predicted odd of him voting for Trump? 
+
+2) Looking at the randomForest model, what does the OOB error tell us? Interpret the first row, second column of the confusion matrix, what does that 920 represent? How does 920 relate to the class.error of 0.078?
+
+
+
+
+# Scene 4
+
+**Prompt:** Now that we have our three models, let's see how well they stack up against each other. Use `predict()` on our three models with cces as the data. Then, use `bind_cols()` to combine the cces data with our predictions. Finally, use `accuracy()` to get the proportion of votes that the model correctly predicted
+
+1) Compare the accuracy of our three models, use bind_rows() to put the three in a nice tibble. Which model appears to be the best?
+
+2) So the randomforest model appears to be the best model, how can we test that this is true?
+
